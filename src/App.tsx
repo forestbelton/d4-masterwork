@@ -1,14 +1,23 @@
 import React, { useCallback, useState } from "react";
 
+type Boosts = Record<number, boolean>;
+
 const RATE = 1.05;
 const BOOST_RATE = 1.25;
 
 const computeStatAtLevel = (
-  boosts: Record<number, boolean>,
+  boosts: Boosts,
   stat: number,
+  isGA: boolean,
   level: number,
   desiredLevel: number
 ) => {
+  let gaStat = 0;
+  if (isGA) {
+    gaStat = computeStatAtLevel(boosts, stat, false, level, 0) / 3;
+    stat -= gaStat;
+  }
+
   if (desiredLevel !== level) {
     const delta = desiredLevel < level ? -1 : 1;
     const offset = desiredLevel < level ? 0 : 1;
@@ -23,13 +32,18 @@ const computeStatAtLevel = (
       stat = stat * rate;
     }
   }
-  return stat.toFixed(2);
+  return stat + gaStat;
 };
 
 const App = () => {
   const [stat, setStat] = useState("0");
   const [level, setLevel] = useState(0);
-  const [boosts, setBoosts] = useState({ 1: false, 2: false, 3: false });
+  const [boosts, setBoosts] = useState<Boosts>({
+    1: false,
+    2: false,
+    3: false,
+  });
+  const [isGA, setIsGA] = useState(false);
 
   const masterworkLevels = [];
   for (let i = 0; i <= 12; i++) {
@@ -52,6 +66,13 @@ const App = () => {
       setLevel(newLevel);
     },
     [setLevel]
+  );
+
+  const onGaChange = useCallback(
+    (ev: React.ChangeEvent<HTMLInputElement>) => {
+      setIsGA(ev.target.checked);
+    },
+    [setIsGA]
   );
 
   const onBoostChange = useCallback(
@@ -84,6 +105,10 @@ const App = () => {
             ))}
           </select>
         </div>
+        <div className="field">
+          <label htmlFor="isGA">GA?</label>
+          <input type="checkbox" onChange={onGaChange} checked={isGA} />
+        </div>
         <table className="masterwork-table">
           <thead>
             <tr>
@@ -100,7 +125,13 @@ const App = () => {
               <td />
               {masterworkLevels.map((i) => (
                 <td key={i}>
-                  {computeStatAtLevel(boosts, statValue, level, i)}
+                  {computeStatAtLevel(
+                    boosts,
+                    statValue,
+                    isGA,
+                    level,
+                    i
+                  ).toFixed(2)}
                 </td>
               ))}
             </tr>
@@ -114,6 +145,7 @@ const App = () => {
                     <input
                       type="checkbox"
                       onChange={onBoostChange(Math.floor(i / 4))}
+                      checked={boosts[Math.floor(i / 4)]}
                     />
                   ) : null}
                 </td>
