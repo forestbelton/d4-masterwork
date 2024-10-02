@@ -26,8 +26,10 @@ const computeStatAtLevel = (
 
     for (let i = level; i !== desiredLevel; i += delta) {
       const rate =
-        (i + offset) % 4 === 0 && boosts[Math.floor((i + offset) / 4)]
-          ? boostRate
+        (i + offset) % 4 === 0
+          ? boosts[Math.floor((i + offset) / 4)]
+            ? boostRate
+            : 1
           : normalRate;
       stat = stat * rate;
     }
